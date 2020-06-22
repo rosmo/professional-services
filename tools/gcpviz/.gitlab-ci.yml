@@ -1,0 +1,40 @@
+defaults: 
+  before_script: 
+    - cd /gcpviz
+    - | 
+    wait_for_export() {
+        status_cmd=$($@ 2>&1  | grep 'Use \[' | sed 's/.*\[\(.*\)\].*/\1/')
+        while [ "$status" != "True" ]
+        do 
+            sleep 2
+            status=$($status_cmd --format='value(done)')
+        done       
+    }
+  image: 
+    name: gcr.io/YOUR-PROJECT/gcpviz
+  variables: 
+    CAI_BUCKET_NAME: <YOUR-BUCKET>
+    ORGANIZATION_ID: <YOUR-ORGANIZATION
+
+stages: 
+  - export_cai
+  - generate_graphs
+
+export_cai: 
+  stage: export_cai
+  script: 
+    - /gcpviz/wait_for_export.sh gcloud asset export --output-path=gs://$CAI_BUCKET_NAME/resource_inventory.json --content-type=resource --organization=$ORGANIZATION_ID
+    - gsutil cp://$CAI_BUCKET_NAME/resource_inventory.json .
+
+ generate_graphs: 
+  stage: generate_graphs
+  script:
+    - python3 gcpviz.py generate
+    - python3 gcpviz.py visualize --title "Example org - VPC networks and connectivity" --no_empty_projects --no_default_networks --include_networks --include_routers yes --styles solarized-style.yaml > network.gv \
+  && dot -Kneato -Tpng -Gdpi=160 network.gv -o network.png
+    - python3 gcpviz.py --only_peered_vpc_projects --include_networks --include_subnets --include_routers full --only_folder 152648350344 --no_nat_routers visualize > network.gv
+    - dot -Kdot -Tsvg network.gv -o network.svg -Gdpi=60
+    - dot -Kdot -Tpng network.gv -o network.png
+  
+
+

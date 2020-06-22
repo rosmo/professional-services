@@ -1,0 +1,3 @@
+ruruki~=1.4.2
+pyfiglet~=0.8
+pyyaml~=5.3.1
