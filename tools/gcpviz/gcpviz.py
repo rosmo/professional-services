@@ -454,13 +454,14 @@ def process_networks(graph, parent, networks):
             if include_networks and include_subnets and not network.properties['data']['autoCreateSubnetworks']:
                 subnetworks = parent.get_in_vertices(
                     'resource', type__eq='compute.googleapis.com/Subnetwork').all()
+                filtered_subnetworks = []
                 for subnet in subnetworks:
                     network_name = subnet.properties['data']['network'].split(
                         '/')
-                    if network_name[-1] != network.properties['data']['name']:
-                        subnetworks.remove(subnet)
+                    if network_name[-1] == network.properties['data']['name']:
+                        filtered_subnetworks.append(subnet)
 
-                process_subnetworks(graph, network, subnetworks)
+                process_subnetworks(graph, network, filtered_subnetworks)
 
             if 'peerings' in data and len(data['peerings']) > 0:
                 for peering in data['peerings']:
