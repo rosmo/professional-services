@@ -524,8 +524,9 @@ def process_projects(graph, parent, projects):
                 print('  N_%s [shape=%s,label="%s",URL="%s",%s];' %
                       (project.ident, styles['shapes']['project'], format_label(project.properties['data']['name']), url, styles['project']))
 
-                print('  N_%s -> N_%s [%s];' %
-                      (project.ident, parent.ident, styles['edges']['project_to_folder']))
+                if parent is not None:
+                    print('  N_%s -> N_%s [%s];' %
+                          (project.ident, parent.ident, styles['edges']['project_to_folder']))
 
         if subgraphs == 'project':
             print('  }')
@@ -588,17 +589,22 @@ if args.mode == 'visualize':
     organizations = graph.get_vertices(
         'resource', type__eq='cloudresourcemanager.googleapis.com/Organization')
 
-    if len(include_folders) > 0:
-        for organization in organizations.all():
-            all_folders = graph.get_vertices(
-                'resource', type__eq='cloudresourcemanager.googleapis.com/Folder').all()
-            for folder in only_folders:
-                for f in all_folders:
-                    if f.properties['data']['name'].split('/')[-1] == folder:
-                        for ancestor in f.properties['ancestors']:
-                            if ancestor.startswith('folders/') and ancestor not in only_folders:
-                                only_folders.append(ancestor)
+    if len(organizations.all()) > 0:
+        if len(include_folders) > 0:
+            for organization in organizations.all():
+                all_folders = graph.get_vertices(
+                    'resource', type__eq='cloudresourcemanager.googleapis.com/Folder').all()
+                for folder in only_folders:
+                    for f in all_folders:
+                        if f.properties['data']['name'].split('/')[-1] == folder:
+                            for ancestor in f.properties['ancestors']:
+                                if ancestor.startswith('folders/') and ancestor not in only_folders:
+                                    only_folders.append(ancestor)
 
-    process_organizations(graph, organizations.all())
+        process_organizations(graph, organizations.all())
+    else:
+        projects = graph.get_vertices(
+            'resource', type__eq='cloudresourcemanager.googleapis.com/Project').all()
+        process_projects(graph, None, projects)
 
     print('}')
