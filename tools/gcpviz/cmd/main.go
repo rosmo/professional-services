@@ -13,7 +13,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/GoogleCloudPlatform/professional-services/tools/gcpviz"
+	"github.com/rosmo/professional-services/tools/gcpviz"
 	"github.com/dimiro1/banner"
 )
 
