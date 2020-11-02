@@ -17,7 +17,7 @@ import (
 	"strings"
 	"sync"
 	"time"
-
+	
 	"github.com/cayleygraph/cayley"
 	"github.com/cayleygraph/cayley/graph"
 	"github.com/cayleygraph/cayley/query"
@@ -989,6 +989,7 @@ func (v *GcpViz) EnrichAssets() error {
 	if err != nil {
 		return err
 	}
+	tx.Rollback()
 
 	fmt.Fprintf(os.Stderr, "Creating references between assets...\n")
 	tx, err = v.AssetDatabase.Begin(false)
@@ -1122,6 +1123,7 @@ func (v *GcpViz) EnrichAssets() error {
 
 		return nil
 	})
+	tx.Rollback()
 
 	/* Step 3: Link via IP addresses */
 	fmt.Fprintf(os.Stderr, "Processing resource IP addresses...\n")
@@ -1141,6 +1143,12 @@ func (v *GcpViz) EnrichAssets() error {
 		enrichAssetTypes = append(enrichAssetTypes, ek)
 	}
 	enrichedAssets := make(map[string]map[string][]interface{}, 0)
+
+	tx, err = v.AssetDatabase.Begin(false)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 
 	fmt.Fprintf(os.Stderr, "Integrating subassets as part of main assets...\n")
 	err = tx.Bucket([]byte("Assets")).ForEach(func(bk, bv []byte) error {
@@ -1205,6 +1213,7 @@ func (v *GcpViz) EnrichAssets() error {
 
 		return nil
 	})
+	tx.Rollback()
 
 	tx, err = v.AssetDatabase.Begin(true)
 	if err != nil {
@@ -1212,6 +1221,7 @@ func (v *GcpViz) EnrichAssets() error {
 	}
 	defer tx.Rollback()
 
+	idx := 1
 	for name, newFields := range enrichedAssets {
 		asset, err := v.getAsset(name)
 		if err == nil {
@@ -1221,7 +1231,8 @@ func (v *GcpViz) EnrichAssets() error {
 			err = v.UpdateAsset(tx, name, asset)
 			if err != nil {
 				return err
-			}
+			}	
+			idx++
 		} else {
 			return err
 		}
