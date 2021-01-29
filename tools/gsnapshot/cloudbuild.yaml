@@ -1,0 +1,43 @@
+steps:
+  - id: 'Build Linux'
+    name: mcr.microsoft.com/dotnet/sdk:5.0
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+          apt-get update &&
+          apt-get install -y make zip &&
+          make linux-x64
+
+  - id: 'Build OS X'
+    name: mcr.microsoft.com/dotnet/sdk:5.0
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+          apt-get update &&
+          apt-get install -y make zip &&
+          make osx-x64
+
+  - id: 'Build Windows'
+    name: mcr.microsoft.com/dotnet/sdk:5.0
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+          apt-get update &&
+          apt-get install -y make zip msitools wixl &&
+          make win-x64 win-x86
+  
+substitutions:
+  _VERSION: '1.2.0'
+  _ARTIFACT_BUCKET: 'your-artifact-bucket-here'
+
+artifacts:
+  objects:
+    location: 'gs://${_ARTIFACT_BUCKET}/$REPO_NAME/$BRANCH_NAME/$BUILD_ID'
+    paths: 
+      - bin/gsnapshot-${_VERSION}-osx-x64.tar.gz
+      - bin/gsnapshot-${_VERSION}-linux-x64.tar.gz
+      - bin/gsnapshot-${_VERSION}-x64.msi
+      - bin/gsnapshot-${_VERSION}-x86.msi

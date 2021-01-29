@@ -1,0 +1,54 @@
+default:
+  image:
+    name: mcr.microsoft.com/dotnet/sdk:5.0
+  before_script:
+    - apt-get update
+    - apt-get install -y make zip msitools wixl
+    
+variables:
+  VERSION: 1.1.0
+
+stages:
+  - build
+  
+build-linux:
+  stage: build
+  script:
+    - make linux-x64
+  only:
+    - main
+    - merge_requests
+  tags:
+    - cloud
+  artifacts:
+    paths:
+      - bin/gsnapshot-${VERSION}-linux-x64.tar.gz
+
+build-osx:
+  stage: build
+  script:
+    - make osx-x64
+  only:
+    - main
+    - merge_requests
+  tags:
+    - cloud
+  artifacts:
+    paths:
+      - bin/gsnapshot-${VERSION}-osx-x64.tar.gz
+
+build-windows:
+  stage: build
+  script:
+    - make win-x64
+    - make win-x86
+  only:
+    - main
+    - merge_requests
+  tags:
+    - cloud
+  artifacts:
+    paths:
+      - bin/gsnapshot-${VERSION}-x64.msi
+      - bin/gsnapshot-${VERSION}-x86.msi
+
