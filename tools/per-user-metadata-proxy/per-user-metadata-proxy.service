@@ -1,0 +1,15 @@
+[Unit]
+Description=Per User Metadata Proxy
+StartLimitIntervalSec=2
+StartLimitBurst=4
+Wants=network-online.target
+After=network.target network-online.target
+
+[Service]
+EnvironmentFile=/etc/per-user-metadata-proxy
+ExecStart=/usr/sbin/per-user-metadata-proxy $CMDLINE
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
