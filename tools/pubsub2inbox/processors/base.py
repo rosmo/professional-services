@@ -153,5 +153,5 @@ class Processor:
                 return list(map(lambda x: x.strip(), vals))
 
     @abc.abstractmethod
-    def process(self):
+    def process(self, config_key=None):
         pass

@@ -38,6 +38,7 @@ Out of the box, you'll have the following functionality:
   - [Cloud Identity groups](examples/groups-example.yaml) ([other example](examples/groups-example-2.yaml))
      - Retrieves group and membership information from [Cloud Identity Groups API](https://cloud.google.com/identity/docs/apis)
      - Useful for example building membership review reports
+  - [Groups that allow external members](examples/external-groups-example.yaml) ([general example for Directory API](examples/directory-example.yaml))
   - Any JSON
     - [See the example of generic JSON processing](examples/generic-config.yaml)
 
