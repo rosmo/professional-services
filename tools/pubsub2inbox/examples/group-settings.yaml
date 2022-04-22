@@ -1,0 +1,48 @@
+#   Copyright 2022 Google LLC
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+retryPeriod: 3 day ago
+
+# This is an example combinining Directory API group lookup and updating the
+# group settings using Group Settings API to allow viewing of the members by 
+# the whole organization.
+#
+# NOTE: If you want to trigger this function based on an audit log entry of a 
+# group getting created, you will need to turn on Workspace log sharing in 
+# admin.google.com:
+#
+#   Account > Account settings > Legal & Compliance > Google Cloud Platform Sharing Options
+# 
+# Group creation audit logs will be then sent to organization logging. A log sink filter 
+# to Pub/Sub can be then used to trigger the function when a group is created:
+#   logName:"cloudaudit.googleapis.com%2Factivity"
+#   protoPayload.methodName:"google.admin.AdminService.createGroup"
+#
+# The service account needs to have Groups Editor or Groups Admin role in admin.google.com
+# Admin Roles, and Service Account Token Creator on itself.
+processors:
+  - genericjson
+  - directory
+
+directory:
+  api: groupsettings
+  groupUniqueIds: "{% set event = data.protoPayload.metadata.event|selectattr('eventName', '==', 'CREATE_GROUP')|first %}{% set email = event.parameter|selectattr('name', '==', 'GROUP_EMAIL')|first %}{{ email.value }}"
+  serviceAccountEmail: service-account@your-project.iam.gserviceaccount.com
+  
+outputs:
+  - type: groupsettings
+    serviceAccountEmail: service-account@your-project.iam.gserviceaccount.com
+    groupUniqueId: "{{ results[0].email }}"
+    groupSettings:
+      whoCanViewMembership: "ALL_IN_DOMAIN_CAN_VIEW"

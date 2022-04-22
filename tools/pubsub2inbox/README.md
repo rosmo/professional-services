@@ -41,7 +41,9 @@ Out of the box, you'll have the following functionality:
   - [Cloud Identity groups](examples/groups-example.yaml) ([other example](examples/groups-example-2.yaml))
      - Retrieves group and membership information from [Cloud Identity Groups API](https://cloud.google.com/identity/docs/apis)
      - Useful for example building membership review reports
-  - [Groups that allow external members](examples/external-groups-example.yaml) ([general example for Directory API](examples/directory-example.yaml))
+  - Google Groups:
+    - [Groups that allow external members](examples/external-groups-example.yaml) ([general example for Directory API](examples/directory-example.yaml))
+    - [Update group settings](examples/group-settings.yaml)
   - [GCP projects](examples/projects-example.yaml)
      - Retrieves a list of projects using Cloud Resource Manager API
   - Any JSON
@@ -65,6 +67,8 @@ Available input processors are:
   - [monitoring.py](processors/monitoring.py): Retrieves time series data from Cloud Ops Monitoring
   - [projects.py](processors/projects.py): Searches or gets GCP project details
   - [cai.py](processors/cai.py): Fetch assets from Cloud Asset Inventory
+  - [scc.py](output/scc.py): Sends findings to Cloud Security Command Center.
+  - [groupsettings.py](output/groupsettings.py): Updates Google Group [settings](https://developers.google.com/admin-sdk/groups-settings/manage).
 
 For full documentation of permissions, processor input and output parameters, see [PROCESSORS.md](PROCESSORS.md).
 
