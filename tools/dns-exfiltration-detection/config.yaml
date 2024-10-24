@@ -1,0 +1,93 @@
+### DNS exfiltration detector configuration
+###
+
+## Set the log level (trace, debug, info, warn, error, fatal, panic)
+logLevel: info
+
+## Log query to run, templated (and you can use Gomplate functions)
+logging:
+  ## Defaults to current project, but you can set sources explicitly via:
+  # resourceNames:
+  #   - projects/[PROJECT_ID]
+  #   - organizations/[ORGANIZATION_ID]
+  ## Below query is used to fetch the logs, adjust the ParseDuration to the interval
+  ## that you run your function on.
+  filter: |
+    LOG_ID("dns.googleapis.com/dns_queries") AND
+    timestamp >= "{{ ((time.Now).Add (time.ParseDuration "-10m")).Format time.RFC3339 }}"
+  ## Override page size for the reply (decrease to save memory for example)
+  pageSize: 500
+
+## Allow list of domains that will not be considered for DNS exfiltration
+allowList:
+  domains:
+    - "**.google.com."
+    - "**.googleapis.com."
+    - "**.googleusercontent.com."
+    - "**.gcr.io"
+    - "**.cloudfunctions.net"
+    - "**.gstatic.com"
+    - "**.run.app"
+    - "**.pki.goog"
+    - "**.pkg.dev"
+    - "**.cluster.local."
+    - "**.internal."
+    - "**.intern."
+  ## Load additional allowed domains from Secret Manager, which is then merged with the domains list
+  ## (allows you to update the allowed domains without redeploying). The format is simply YAML with
+  # top level list of additional domains.
+  # fromSecretManager: "projects/1234567890/secrets/dns-exfil-allowlist/versions/latest"
+
+## Configure thresholds for detecting entropy of DNS lookups
+##
+detection:
+  - action: "warn" # Just warn on low confidence matches
+    bitsOfEntropy: 2.2
+    logEntriesRequired: 10
+    minimumLength: 20
+  - action: "block" # Warning simply logs and/or creates a SCC finding
+    bitsOfEntropy: 5 # Number of bits of entropy for the block of DNS queries
+    ngrams: 3 # Use trigrams for entropy calculation
+    logEntriesRequired: 20 # Amount of log entries required
+    minimumLength: 20 # Minimum length of the query to consider it
+    securityCommandCenter:
+      createFinding: true # Whether to create a SCC finding if matching
+      finding:
+        findingId: |
+          {{ uuid.V4 | strings.ReplaceAll "-" "" }}
+        # The log message does not provide for a complete project + network ID, so you may have to manually
+        # plug in the project below:
+        resourceName: "//compute.googleapis.com/projects/{{ (firstLog).Payload.JsonPayload.vmProjectId }}/global/networks/{{ (firstLog).Payload.JsonPayload.sourceNetwork }}"
+        state: "ACTIVE"
+        category: "DATA_EXFILTRATION"
+        externalUri: "https://console.cloud.google.com/logs/query;query=insertId%3D=({{ urlquery insertIds }})%22?project={{ (firstLog).Payload.JsonPayload.vmProjectId }}"
+        eventTime: "{{ (firstLog).timestamp }}"
+        severity: "MEDIUM"
+        findingClass: "THREAT"
+        description: |
+          A possible DNS exfiltration threat was detected.
+
+          Domain: {{ (detection).Domain }}
+          Entropy: {{ (detection).Entropy }}
+          Number of queries: {{ (detection).NumberOfLogEntries }}
+        sourceProperties:
+          responseCode: "{{ (firstLog).Payload.JsonPayload.responseCode }}"
+    queryParts: 2 # Eg. from "foo.bar.example.com" use "example.com" when considering logEntriesRequired and entropy
+    ## Set this to true if you want to consider characters <32 & >127 as valid DNS names when calculating entropy
+    # allowAllCharacters: true
+
+## Configure Response Policy for blocking
+block:
+  # Set Cloud DNS Response Policy name
+  responsePolicy: "my-rpz-name"
+  ## Override project ID for response policy
+  # projectId: "my-project"
+  ## Override rule prefix
+  # rulePrefix: "myrule-"
+  ## Override the RRdatas
+  # destination: "127.0.0.1"
+
+## Security Command Center settings for creating findings
+securityCommandCenter:
+  ## Set the Security Command Center source
+  source: "organizations/12345678/sources/1234567890"
