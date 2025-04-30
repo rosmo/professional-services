@@ -1,0 +1,277 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# List of additional relationships not described by CAI relationship data
+customRelationships:
+  compute.googleapis.com/Subnetwork:
+    - field: resource.data.network
+      ref: compute.googleapis.com/Network
+  compute.googleapis.com/Address:
+    - field: resource.data.subnetwork
+      ref: compute.googleapis.com/Subnetwork
+  compute.googleapis.com/GlobalAddress:
+    - field: resource.data.network
+      ref: compute.googleapis.com/Network
+  compute.googleapis.com/BackendService:
+    - field: resource.data.healthChecks
+      ref: compute.googleapis.com/HealthCheck
+    - field: resource.data.securityPolicy
+      ref: compute.googleapis.com/SecurityPolicy
+  compute.googleapis.com/RegionBackendService:
+    - field: resource.data.healthChecks
+      ref: compute.googleapis.com/HealthCheck
+    - field: resource.data.securityPolicy
+      ref: compute.googleapis.com/SecurityPolicy
+  compute.googleapis.com/NetworkEndpointGroup:
+    - field: resource.data.network
+      ref: compute.googleapis.com/Network
+    - field: resource.data.subnetwork
+      ref: compute.googleapis.com/Subnetwork
+  compute.googleapis.com/Disk:
+    - field: resource.data.users[*]
+      ref: compute.googleapis.com/Instance
+    - field: resource.data.resourcePolicies
+      ref: compute.googleapis.com/ResourcePolicy
+  compute.googleapis.com/RegionDisk:
+    - field: resource.data.users[*]
+      ref: compute.googleapis.com/Instance
+    - field: resource.data.resourcePolicies
+      ref: compute.googleapis.com/ResourcePolicy
+  compute.googleapis.com/Firewall:
+    - field: resource.data.network
+      ref: compute.googleapis.com/Network
+    - field: resource.data.sourceServiceAccounts
+      ref: iam.googleapis.com/ServiceAccount
+    - field: resource.data.targetServiceAccounts
+      ref: iam.googleapis.com/ServiceAccount
+  compute.googleapis.com/ForwardingRule:
+    - field: resource.data.network
+      ref: compute.googleapis.com/Network
+    - field: resource.data.subnetwork
+      ref: compute.googleapis.com/Subnetwork
+    - field: resource.data.target
+      refs:
+        - compute.googleapis.com/TargetGrpcProxy
+        - compute.googleapis.com/TargetHttpProxy
+        - compute.googleapis.com/TargetHttpsProxy
+        - compute.googleapis.com/TargetSslProxy
+        - compute.googleapis.com/TargetTcpProxy
+  compute.googleapis.com/GlobalForwardingRule:
+    - field: resource.data.target
+      refs:
+        - compute.googleapis.com/TargetGrpcProxy
+        - compute.googleapis.com/TargetHttpProxy
+        - compute.googleapis.com/TargetHttpsProxy
+        - compute.googleapis.com/TargetSslProxy
+        - compute.googleapis.com/TargetTcpProxy
+  compute.googleapis.com/Instance:
+    - field: resource.data.networkInterfaces[*].network
+      ref: compute.googleapis.com/Network
+    - field: resource.data.networkInterfaces[*].subnetwork
+      ref: compute.googleapis.com/Subnetwork
+    - field: resource.data.disks[*].source
+      refs:
+        - compute.googleapis.com/Disk
+        - compute.googleapis.com/RegionDisk
+  compute.googleapis.com/InstanceGroup:
+    - field: resource.data.network
+      ref: compute.googleapis.com/Network
+    - field: resource.data.subnetwork
+      ref: compute.googleapis.com/Subnetwork
+  compute.googleapis.com/InstanceGroupManager:
+    - field: resource.data.instanceGroup
+      ref: compute.googleapis.com/InstanceGroup
+    - field: resource.data.instanceTemplate
+      ref: compute.googleapis.com/InstanceTemplate
+  compute.googleapis.com/InstanceTemplate:
+    - field: resource.data.properties.networkInterfaces[*].network
+      ref: compute.googleapis.com/Network
+    - field: resource.data.properties.networkInterfaces[*].subnetwork
+      ref: compute.googleapis.com/Subnetwork
+    - field: resource.data.properties.disks[*].sourceImage
+      ref: compute.googleapis.com/Image
+  compute.googleapis.com/Route:
+    - field: resource.data.network
+      ref: compute.googleapis.com/Network
+    - field: resource.data.nextHopNetwork
+      ref: compute.googleapis.com/Network
+  compute.googleapis.com/Router:
+    - field: resource.data.network
+      ref: compute.googleapis.com/Network
+    - field: resource.data.interfaces.linkedVpnTunnel
+      ref: compute.googleapis.com/VpnTunnel
+    - field: resource.data.interfaces.linkedInterconnectAttachment
+      ref: compute.googleapis.com/InterconnectAttachment
+  compute.googleapis.com/Interconnect:
+    - field: resource.data.interconnectAttachments
+      ref: compute.googleapis.com/InterconnectAttachment
+  compute.googleapis.com/VpnTunnel:
+    - field: resource.data.peerExternalGateway
+      ref: compute.googleapis.com/TargetVpnGateway
+    - field: resource.data.vpnGateway
+      ref: compute.googleapis.com/VpnGateway
+    - field: resource.data.router
+      ref: compute.googleapis.com/Router
+  compute.googleapis.com/Snapshot:
+    - field: resource.data.sourceDisk
+      refs:
+        - compute.googleapis.com/Disk
+        - compute.googleapis.com/RegionDisk
+  compute.googleapis.com/TargetHttpProxy:
+    - field: resource.data.urlMap
+      ref: compute.googleapis.com/UrlMap
+  compute.googleapis.com/TargetHttpsProxy:
+    - field: resource.data.urlMap
+      ref: compute.googleapis.com/UrlMap
+    - field: resource.data.sslCertificates
+      ref: compute.googleapis.com/SslCertificate
+  compute.googleapis.com/TargetTcpProxy:
+    - field: resource.data.service
+      ref: compute.googleapis.com/BackendService
+  compute.googleapis.com/TargetInstance:
+    - field: resource.data.service
+      ref: compute.googleapis.com/BackendService
+  compute.googleapis.com/TargetVpnGateway:
+    - field: resource.data.forwardingRules
+      ref: compute.googleapis.com/ForwardingRule
+    - field: resource.data.tunnels
+      ref: compute.googleapis.com/VpnTunnel
+    - field: resource.data.network
+      ref: compute.googleapis.com/Network
+  #compute.googleapis.com/SslCertificate:
+  #  - resource.parent
+  compute.googleapis.com/UrlMap:
+    - field: resource.data.defaultService
+      refs:
+        - compute.googleapis.com/BackendService
+        - compute.googleapis.com/RegionBackendService
+    - field: resource.data.pathMatchers.defaultService
+      refs:
+        - compute.googleapis.com/BackendService
+        - compute.googleapis.com/RegionBackendService
+    - field: resource.data.pathMatchers.pathRules.service
+      refs:
+        - compute.googleapis.com/BackendService
+        - compute.googleapis.com/RegionBackendService
+  compute.googleapis.com/Autoscaler:
+    - field: resource.data.target
+      ref: compute.googleapis.com/InstanceGroupManager
+  dns.googleapis.com/ManagedZone:
+    - field: resource.data.privateVisibilityConfig.networks[*].networkUrl
+      ref: compute.googleapis.com/Network
+  dns.googleapis.com/Policy:
+    - field: resource.data.networks.networkUrl
+      ref: compute.googleapis.com/Network
+  pubsub.googleapis.com/Subscription:
+    - field: resource.data.topic
+      ref: pubsub.googleapis.com/Topic
+  container.googleapis.com/Cluster:
+    - field: resource.data.instanceGroupUrls
+      ref: compute.googleapis.com/InstanceGroup
+  container.googleapis.com/NodePool:
+    - field: resource.data.instanceGroupUrls
+      ref: compute.googleapis.com/InstanceGroup
+  sqladmin.googleapis.com/Instance:
+    - field: resource.data.ipConfiguration.privateNetwork
+      ref: compute.googleapis.com/Network
+  logging.googleapis.com/LogSink:
+    - field: resource.data.destination
+      refs:
+        - pubsub.googleapis.com/Topic
+        - logging.googleapis.com/LogBucket
+        - bigquery.googleapis.com/Dataset
+        - storage.googleapis.com/Bucket
+
+additionalViews:
+  - asset: "cloudresourcemanager.googleapis.com/Project:cloudresourcemanager.googleapis.com/Folder"
+    label: "ProjectToFolder"
+    table: cloudresourcemanager_Project_to_cloudresourcemanager_Folder
+    sourceTable: cloudresourcemanager_Project
+    query: |
+      SELECT 
+        name AS name,
+        resource.parent AS parent 
+      FROM
+        {sourceTable} 
+      WHERE 
+        resource.parent LIKE "%/folders/%";
+  - asset: "cloudresourcemanager.googleapis.com/Project:cloudresourcemanager.googleapis.com/Organization"
+    label: "ProjectToOrganization"
+    table: cloudresourcemanager_Project_to_cloudresourcemanager_Organization
+    sourceTable: cloudresourcemanager_Project
+    query: |
+      SELECT 
+        name AS name,
+        resource.parent AS parent 
+      FROM
+        {sourceTable}
+      WHERE
+        resource.parent LIKE "%/organizations/%";
+  - asset: "cloudresourcemanager.googleapis.com/Folder:cloudresourcemanager.googleapis.com/Folder"
+    label: "FolderToFolder"
+    table: cloudresourcemanager_Folder_to_cloudresourcemanager_Folder
+    sourceTable: cloudresourcemanager_Folder
+    query: |
+      SELECT
+        name AS name,
+        resource.parent AS parent 
+      FROM
+        {sourceTable}
+      WHERE 
+        resource.parent LIKE "%/folders/%";
+  - asset: "cloudresourcemanager.googleapis.com/Folder:cloudresourcemanager.googleapis.com/Organization"
+    label: "FolderToOrganization"
+    table: cloudresourcemanager_Folder_to_cloudresourcemanager_Organization
+    sourceTable: cloudresourcemanager_Folder
+    query: |
+      SELECT 
+        name AS name,
+        resource.parent AS parent 
+      FROM
+        {sourceTable}
+      WHERE
+        resource.parent LIKE "%/organizations/%";
+  # This is the important table, as it links all the resources to projects
+  - asset: "Resources:cloudresourcemanager.googleapis.com/Project"
+    label: "ResourcesToProject"
+    table: Resources_to_cloudresourcemanager_Project
+    sourceTable: Resources
+    assetTable: Resources
+    # If dynamic labels become supported...
+    # REPLACE(CONCAT(
+    #      INITCAP(SPLIT(REPLACE(REPLACE(asset_type, ".", " "), " googleapis com", ""), "/")[0]),
+    #              SPLIT(REPLACE(REPLACE(asset_type, ".", " "), " googleapis com", ""), "/")[1]),
+    #      " ", "") AS label
+    assetQuery: |
+      SELECT
+        name, asset_type, resource
+      FROM
+        {caiTable}
+      JOIN
+        UNNEST(ancestors) AS ancestor
+      ON
+        ancestor LIKE 'projects/%'
+
+    # Dynamic label not supported yet
+    assetTableDynamicLabel: false
+    query: |
+      SELECT
+        name AS name,
+        CONCAT('//cloudresourcemanager.googleapis.com/', ancestor) AS parent
+      FROM
+        {caiTable}
+      JOIN
+        UNNEST(ancestors) AS ancestor
+      ON
+        ancestor LIKE 'projects/%'

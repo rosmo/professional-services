@@ -1,0 +1,113 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Defines the fields that are received from the BigQuery query
+fields:
+  # These are defaults, but shown here for completeness
+  relatedAssets: related_assets
+  relatedAssetsName: related_asset
+  relatedAssetsType: related_asset_type
+  name: name
+  type: asset_type
+  resource: resource
+  parent: parent
+  resourceData: data
+
+# Container resources are rendered as, well, a container in D2
+containerResources:
+  - compute.googleapis.com/Network
+
+# Connect related assets to the following asset types
+connectRelatedAssets:
+  - compute.googleapis.com/Network
+
+# Allows prepending and postpending stuff into the diagram
+diagram:
+  pre: |
+    # direction: up
+  post: |
+    # Hello World
+
+# Shape configuration
+shapes:
+  default:
+    label: |
+      {{ resource.name|default(name)|basename }}
+    style:
+      strokeWidth: 2
+  compute.googleapis.com/Network:
+    icon: google-cloud-icons/virtual_private_cloud/virtual_private_cloud.svg
+    style:
+      strokeWidth: 3 # Overrides default style
+  compute.googleapis.com/Instance:
+    icon: google-cloud-icons/compute_engine/compute_engine.svg
+    label: |
+      {{ resource.name|default(name)|basename }}
+
+      ({{ resource.machineType|basename }})
+    # markdown: true # This does not work well yet
+  compute.googleapis.com/Disk:
+    icon: google-cloud-icons/persistent_disk/persistent_disk.svg
+  compute.googleapis.com/RegionDisk:
+    icon: google-cloud-icons/persistent_disk/persistent_disk.svg
+
+# Convenience functions that generate an asset_type_filter:
+#   include: generates a NOT IN ('item1', 'item2', ...)
+#   exclude: generates a IN ('item1', 'item2')
+#filter:
+#  include:
+#    - cloudresourcemanager.googleapis.com/Project
+#    - compute.googleapis.com/Network
+#    - compute.googleapis.com/Subnetwork
+#    - compute.googleapis.com/Instance
+#    - compute.googleapis.com/Disk
+#    - compute.googleapis.com/RegionDisk
+
+# Do not query ancestors, or UNNEST it.
+query: |
+  WITH resource_graph AS (
+  SELECT
+      source_asset,
+      asset,
+      related_asset,
+      related_asset_type,
+    FROM
+      GRAPH_TABLE( 
+        {{ graph }} 
+        MATCH
+          (s:CloudresourcemanagerProject {name: "//cloudresourcemanager.googleapis.com/projects/1069720238363"})-[:Owns]->(d)
+          FILTER d.asset_type {{ asset_type_filter }}
+        RETURN
+          s, d
+
+        NEXT
+
+        OPTIONAL MATCH (d)<-[:Relates]-(g)
+        FILTER g.asset_type {{ asset_type_filter }}
+        RETURN s.name AS source_asset, d.name AS asset, g.name AS related_asset, g.asset_type AS related_asset_type
+      )
+  )
+  SELECT
+    assets.name AS name,
+    assets.asset_type AS asset_type,
+    assets.resource AS resource,
+    resource.parent AS parent,
+    ARRAY_AGG(STRUCT(resource_graph.related_asset, resource_graph.related_asset_type)) AS related_assets
+  FROM
+    {{ assets }} AS assets
+  JOIN 
+    resource_graph 
+  ON 
+    assets.name = resource_graph.asset OR assets.name = resource_graph.related_asset
+  GROUP BY 1, 2, 3
