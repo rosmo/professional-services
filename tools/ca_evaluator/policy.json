@@ -1,0 +1,131 @@
+{
+  "advancedOptionsConfig": {
+    "jsonCustomConfig": {},
+    "jsonParsing": "STANDARD",
+    "logLevel": "VERBOSE"
+  },
+  "creationTimestamp": "2025-06-17T01:32:32.750-07:00",
+  "description": "",
+  "fingerprint": "7qYVEVDTTh0=",
+  "id": "4289302254386452175",
+  "kind": "compute#securityPolicy",
+  "labelFingerprint": "42WmSpB8rSM=",
+  "name": "test",
+  "region": "https://www.googleapis.com/compute/v1/projects/fake-project/regions/europe-north1",
+  "rules": [
+    {
+      "action": "allow",
+      "description": "",
+      "kind": "compute#securityPolicyRule",
+      "match": {
+        "expr": {
+          "expression": "ipInRange(origin.ip, '10.0.0.0/8')"
+        },
+        "exprOptions": {
+          "recaptchaOptions": {}
+        }
+      },
+      "preconfiguredWafConfig": {},
+      "preview": false,
+      "priority": 1000
+    },
+    {
+      "action": "deny(403)",
+      "description": "",
+      "kind": "compute#securityPolicyRule",
+      "match": {
+        "expr": {
+          "expression": "evaluatePreconfiguredWaf('methodenforcement-v33-stable', {'sensitivity': 4})"
+        },
+        "exprOptions": {
+          "recaptchaOptions": {}
+        }
+      },
+      "preconfiguredWafConfig": {},
+      "preview": false,
+      "priority": 10
+    },
+    {
+      "action": "deny(403)",
+      "description": "",
+      "kind": "compute#securityPolicyRule",
+      "match": {
+        "expr": {
+          "expression": "evaluatePreconfiguredWaf('sqli-v33-stable', {'sensitivity': 4})"
+        },
+        "exprOptions": {
+          "recaptchaOptions": {}
+        }
+      },
+      "preconfiguredWafConfig": {},
+      "preview": false,
+      "priority": 5
+    },
+    {
+      "action": "deny(403)",
+      "description": "",
+      "kind": "compute#securityPolicyRule",
+      "match": {
+        "expr": {
+          "expression": "evaluatePreconfiguredWaf('json-sqli-canary', {'sensitivity': 4})"
+        },
+        "exprOptions": {
+          "recaptchaOptions": {}
+        }
+      },
+      "preconfiguredWafConfig": {},
+      "preview": false,
+      "priority": 35
+    },
+    {
+      "action": "deny(403)",
+      "description": "",
+      "kind": "compute#securityPolicyRule",
+      "match": {
+        "expr": {
+          "expression": "evaluatePreconfiguredWaf('php-v33-stable', {'sensitivity': 4})"
+        },
+        "exprOptions": {
+          "recaptchaOptions": {}
+        }
+      },
+      "preconfiguredWafConfig": {},
+      "preview": true,
+      "priority": 505
+    },
+    {
+      "action": "deny(403)",
+      "description": "",
+      "kind": "compute#securityPolicyRule",
+      "match": {
+        "expr": {
+          "expression": "evaluateAdaptiveProtection('11275630857957031521')"
+        },
+        "exprOptions": {
+          "recaptchaOptions": {}
+        }
+      },
+      "preconfiguredWafConfig": {},
+      "preview": false,
+      "priority": 600
+    },
+    {
+      "action": "deny(403)",
+      "description": "",
+      "kind": "compute#securityPolicyRule",
+      "match": {
+        "expr": {
+          "expression": "evaluateAdaptiveProtectionAutoDeploy()"
+        },
+        "exprOptions": {
+          "recaptchaOptions": {}
+        }
+      },
+      "preconfiguredWafConfig": {},
+      "preview": false,
+      "priority": 601
+    }
+  ],
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/fake-project/regions/europe-north1/securityPolicies/test",
+  "type": "CLOUD_ARMOR"
+}

@@ -1,0 +1,152 @@
+---
+httpRequests:
+  - origin:
+      ip: "10.0.0.1"
+      # userIp: 1.2.3.4
+    description: "Basic HTTP GET request"
+    request: |+
+      GET /test/path HTTP/1.1
+      Content-Type: text/plain
+
+
+    expect: "allow"
+    evaluatePreviewRules: false
+  - origin:
+      ip: "10.0.0.1"
+      # userIp: 1.2.3.4
+    description: "HTTP GET request with SQL injection"
+    request: |+
+      GET /test/path?foo=1%20AND%201=1 HTTP/1.1
+      Content-Type: text/plain
+
+
+    expect: "deny(403)"
+    evaluatePreviewRules: false
+  - origin:
+      ip: "10.0.0.1"
+      # userIp: 1.2.3.4
+    description: "Basic HTTP POST request"
+    request: |+
+      POST /test/path HTTP/1.1
+      Content-Type: application/x-www-form-urlencoded
+      Content-Length: 5
+
+      foo=1
+
+    expect: "allow"
+    evaluatePreviewRules: false
+  - origin:
+      ip: "10.0.0.1"
+      # userIp: 1.2.3.4
+    description: "HTTP POST request with SQL injection"
+    request: |+
+      POST /test/path HTTP/1.1
+      Content-Type: application/x-www-form-urlencoded
+      Content-Length: 18
+
+      foo=1%20AND%201=1
+
+    expect: "deny(403)"
+    evaluatePreviewRules: false
+  - origin:
+      ip: "10.0.0.1"
+      # userIp: 1.2.3.4
+    description: "HTTP DELETE request (Method Enforcement)"
+    request: |+
+      DELETE /test/path HTTP/1.1
+      Content-Type: application/x-www-form-urlencoded
+
+
+    expect: "deny(403)"
+    evaluatePreviewRules: false
+  - origin:
+      ip: "10.0.0.1"
+      # userIp: 1.2.3.4
+    description: "HTTP POST request with JSON SQL injection"
+    request: |+
+      POST /test/path HTTP/1.1
+      Content-Type: application/x-www-form-urlencoded
+      Content-Length: 77
+
+      foo=1%20OR%20JSON_EXTRACT%28%27%7B%22foo%22%3A1%7D%27%2C%27%24.foo%27%29%3D1
+
+    expect: "deny(403)"
+    evaluatePreviewRules: false
+  - origin:
+      ip: "10.0.0.1"
+      # userIp: 1.2.3.4
+    description: "HTTP HEAD request with JSON SQL in cookie"
+    request: |+
+      HEAD /test/path HTTP/1.1
+      Content-Type: application/x-www-form-urlencoded
+      Cookie: 1%20OR%20JSON_EXTRACT%28%27%7B%22foo%22%3A1%7D%27%2C%27%24.foo%27%29%3D1
+
+    expect: "deny(403)"
+    evaluatePreviewRules: false
+
+crsRules:
+  sqli-v33-stable:
+    id: "owasp-crs-v030301-id{{ .Id }}-sqli"
+    sources:
+      - crs/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf
+  xss-v33-stable:
+    id: "owasp-crs-v030301-id{{ .Id }}-xss"
+    sources:
+      - crs/rules/REQUEST-941-APPLICATION-ATTACK-XSS.conf
+  lfi-v33-stable:
+    id: "owasp-crs-v030301-id{{ .Id }}-lfi"
+    sources:
+      - crs/rules/REQUEST-930-APPLICATION-ATTACK-LFI.conf
+  rfi-v33-stable:
+    id: "owasp-crs-v030301-id{{ .Id }}-rfi"
+    sources:
+      - crs/rules/REQUEST-931-APPLICATION-ATTACK-RFI.conf
+  rce-v33-stable:
+    id: "owasp-crs-v030301-id{{ .Id }}-rce"
+    sources:
+      - crs/rules/REQUEST-932-APPLICATION-ATTACK-RCE.conf
+  methodenforcement-v33-stable:
+    id: "owasp-crs-v030301-id{{ .Id }}-methodenforcement"
+    # Default for Cloud Armor
+    config: |
+      SecAction \
+       "id:900200,\
+       phase:1,\
+       nolog,\
+       pass,\
+       t:none,\
+      setvar:'tx.allowed_methods=GET HEAD POST OPTIONS'"
+    sources:
+      - crs/rules/REQUEST-911-METHOD-ENFORCEMENT.conf
+  scannerdetection-v33-stable:
+    id: "owasp-crs-v030301-id{{ .Id }}-scannerdetection"
+    sources:
+      - crs/rules/REQUEST-913-SCANNER-DETECTION.conf
+  protocolattack-v33-stable:
+    id: "owasp-crs-v030301-id{{ .Id }}-protocolattack"
+    sources:
+      - crs/rules/REQUEST-921-PROTOCOL-ATTACK.conf
+  php-v33-stable:
+    id: "owasp-crs-v030301-id{{ .Id }}-php"
+    sources:
+      - crs/rules/REQUEST-933-APPLICATION-ATTACK-PHP.conf
+  sessionfixation-v33-stable:
+    id: "owasp-crs-v030301-id{{ .Id }}-sessionfixation"
+    sources:
+      - crs/rules/REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf
+  java-v33-stable:
+    id: "owasp-crs-v030301-id{{ .Id }}-java"
+    sources:
+      - crs/rules/REQUEST-944-APPLICATION-ATTACK-JAVA.conf
+  nodejs-v33-stable:
+    id: "owasp-crs-v030301-id{{ .Id }}-nodejs"
+    sources:
+      - crs/rules/REQUEST-934-APPLICATION-ATTACK-NODEJS.conf
+  cve-canary:
+    id: "owasp-crs-v030301-id{{ .Id }}-cve"
+    sources:
+      - cve-canary.conf
+  json-sqli-canary:
+    id: "owasp-crs-v030301-id{{ .Id }}-sqli"
+    sources:
+      - json-sqli-canary.conf
