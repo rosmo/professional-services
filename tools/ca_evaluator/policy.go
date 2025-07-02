@@ -15,128 +15,35 @@ package caevaluator
 //    limitations under the License.
 
 import (
-	"bufio"
 	"encoding/json"
-	"fmt"
 	"io"
-	"net/http"
-	"os"
-	"path/filepath"
 	"slices"
-	"strings"
 
-	"github.com/rs/zerolog/log"
 	compute "google.golang.org/api/compute/v1"
-	"gopkg.in/yaml.v3"
 )
 
 type SecurityPolicy struct {
 	compute.SecurityPolicy
 	// Id causes issues as it's defined as uint64 which unmarshaler doesn't like
-	Id string `json:"id,omitempty,string" yaml:"id,omitempty,string"`
+	Id string `json:"id,omitempty"`
 }
 
-type EvaluationRequest struct {
-	Origin               map[string]interface{} `yaml:"origin,omitempty"`
-	Description          string                 `yaml:"description,omitempty"`
-	Request              string                 `yaml:"request,omitempty"`
-	RequestType          string                 `yaml:"requestType,omitempty"`
-	HttpRequest          *http.Request
-	RequestBody          []byte
-	Expect               string `yaml:"expect,omitempty"`
-	EvaluatePreviewRules bool   `yaml:"evaluatePreviewRules,omitempty"`
+func NewSecurityPolicy() *SecurityPolicy {
+	return &SecurityPolicy{}
 }
 
-type CrsRule struct {
-	ID      string   `yaml:"id,omitempty"`
-	Config  string   `yaml:"config,omitempty"`
-	Sources []string `yaml:"sources,omitempty"`
-}
-
-type EvaluationRequests struct {
-	HttpRequests     []EvaluationRequest `yaml:"httpRequests,omitempty"`
-	CrsRules         map[string]CrsRule  `yaml:"crsRules,omitempty"`
-	CrsRulesAll      map[string]string
-	CrsRulesBasePath map[string]string
-
-	CurrentRequest *EvaluationRequest
-	CurrentPolicy  *compute.SecurityPolicy
-}
-
-func ParseEvaluationRequests(contents io.Reader) (*EvaluationRequests, error) {
-	requestsContents, err := io.ReadAll(contents)
-	if err != nil {
-		return nil, err
-	}
-
-	var requests EvaluationRequests
-	if err := yaml.Unmarshal(requestsContents, &requests); err != nil {
-		return nil, err
-	}
-
-	if len(requests.CrsRules) == 0 {
-		log.Warn().Msg("No Core Rule Set rule configurations specified, pre-defined WAF rules will not be evaluated")
-	}
-
-	requests.CrsRulesAll = make(map[string]string, 0)
-	requests.CrsRulesBasePath = make(map[string]string, 0)
-	for id, crsrule := range requests.CrsRules {
-		var allRules string = ""
-
-		for _, pattern := range crsrule.Sources {
-			files, err := filepath.Glob(pattern)
-			if err != nil {
-				log.Error().Err(err).Msgf("Error looking for CRS configuration files: %s", pattern)
-			} else {
-				for _, file := range files {
-					fc, err := os.ReadFile(file)
-					if err != nil {
-						log.Fatal().Err(err).Msgf("Error reading CRS configuration file: %s", file)
-					}
-					allRules += "\n" + string(fc)
-					requests.CrsRulesBasePath[id] = filepath.Dir(file)
-				}
-			}
-		}
-		allRules += "\n" + crsrule.Config + "\n"
-		requests.CrsRulesAll[id] = string(allRules)
-	}
-
-	for idx, req := range requests.HttpRequests {
-		if req.RequestType == "HTTP2" {
-			return nil, fmt.Errorf("HTTP2 requests are not yet supported")
-		} else {
-			requests.HttpRequests[idx].HttpRequest, err = http.ReadRequest(bufio.NewReader(strings.NewReader(req.Request)))
-		}
-		if err == io.EOF {
-			break
-		} else {
-			body, err := io.ReadAll(requests.HttpRequests[idx].HttpRequest.Body)
-			if err != nil {
-				return nil, fmt.Errorf("Failed to read request body: %s: %s\n", err.Error(), req.Request)
-			}
-			requests.HttpRequests[idx].RequestBody = body
-		}
-		if err != nil {
-			return nil, fmt.Errorf("Failed to parse request: %s: %s\n", err.Error(), req.Request)
-		}
-	}
-	return &requests, nil
-}
-
-func ParseSecurityPolicy(contents io.Reader) (*compute.SecurityPolicy, error) {
+func (sp *SecurityPolicy) ParseSecurityPolicy(contents io.Reader) error {
 	policyContents, err := io.ReadAll(contents)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var policy compute.SecurityPolicy
-	if err := json.Unmarshal(policyContents, &policy); err != nil {
-		return nil, err
+	if err := json.Unmarshal(policyContents, sp); err != nil {
+		return err
 	}
 
 	// Sort rules by priority
-	slices.SortFunc(policy.Rules, func(a, b *compute.SecurityPolicyRule) int {
+	slices.SortFunc(sp.Rules, func(a, b *compute.SecurityPolicyRule) int {
 		if a.Priority > b.Priority {
 			return 1
 		} else if a.Priority < b.Priority {
@@ -146,5 +53,5 @@ func ParseSecurityPolicy(contents io.Reader) (*compute.SecurityPolicy, error) {
 	})
 
 	// Print out the new struct
-	return &policy, nil
+	return nil
 }

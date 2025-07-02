@@ -12,6 +12,16 @@ httpRequests:
     expect: "allow"
     evaluatePreviewRules: false
   - origin:
+      ip: "35.228.114.153"
+    description: "Basic HTTP GET request (GeoIP test)"
+    request: |+
+      GET /test/path HTTP/1.1
+      Content-Type: text/plain
+
+
+    expect: "allow"
+    evaluatePreviewRules: false
+  - origin:
       ip: "10.0.0.1"
       # userIp: 1.2.3.4
     description: "HTTP GET request with SQL injection"
@@ -83,6 +93,10 @@ httpRequests:
 
     expect: "deny(403)"
     evaluatePreviewRules: false
+
+geoIp:
+  country: GeoLite2-Country.mmdb
+  asn: GeoLite2-ASN.mmdb
 
 crsRules:
   sqli-v33-stable:

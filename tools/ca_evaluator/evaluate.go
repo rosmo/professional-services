@@ -14,13 +14,16 @@ package caevaluator
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 import (
+	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 	"time"
 
 	celtypes "github.com/google/cel-go/common/types"
+	"github.com/oschwald/geoip2-golang"
 	compute "google.golang.org/api/compute/v1"
 
 	"github.com/rs/zerolog/log"
@@ -33,14 +36,14 @@ func (e *RuleEvaluationFailed) Error() string {
 	return fmt.Sprintf("Rule evaluation failed")
 }
 
-func EvaluateRequests(policy *compute.SecurityPolicy, requests *EvaluationRequests) error {
-	CurrentEvaluationRequests = requests
+func (er *EvaluationRequests) EvaluateRequests(policy *SecurityPolicy) error {
+	requests := er
 
 	for ridx, req := range requests.HttpRequests {
 		log.Info().Int("request", ridx).Str("description", req.Description).Msg("Evaluating HTTP request against policy")
 		for ruleIdx, rule := range policy.Rules {
-			CurrentEvaluationRequests.CurrentRequest = &req
-			CurrentEvaluationRequests.CurrentPolicy = policy
+			requests.CurrentRequest = &req
+			requests.CurrentPolicy = policy
 
 			if rule.Match.VersionedExpr == "SRC_IPS_V1" {
 				return fmt.Errorf("Versioned expression of type SRC_IPS_V1 are not supported")
@@ -52,7 +55,7 @@ func EvaluateRequests(policy *compute.SecurityPolicy, requests *EvaluationReques
 			}
 
 			log.Info().Msgf("Evaluating rule #%d (priority %d) with request #%d: %s", ruleIdx+1, rule.Priority, ridx+1, rule.Match.Expr.Expression)
-			err := EvaluateSecurityRule(rule, req.HttpRequest, map[string]interface{}{
+			err := er.EvaluateSecurityRule(rule, req.HttpRequest, map[string]interface{}{
 				"origin": req.Origin,
 			})
 
@@ -75,9 +78,11 @@ func EvaluateRequests(policy *compute.SecurityPolicy, requests *EvaluationReques
 	return nil
 }
 
-func EvaluateSecurityRule(rule *compute.SecurityPolicyRule, r *http.Request, attributes map[string]interface{}) error {
+func (er *EvaluationRequests) EvaluateSecurityRule(rule *compute.SecurityPolicyRule, r *http.Request, attributes map[string]interface{}) error {
 	// Set up CEL environment
-	celEnv, err := GetCelEnv()
+	ctx := context.WithValue(context.Background(), "reqs", er)
+
+	celEnv, err := GetCelEnv(ctx)
 	if err != nil {
 		return err
 	}
@@ -120,7 +125,50 @@ func EvaluateSecurityRule(rule *compute.SecurityPolicyRule, r *http.Request, att
 		celParams[k] = v
 	}
 
-	out, _, err := celProgram.Eval(celParams)
+	if origin, ok := celParams["origin"].(map[string]interface{}); ok {
+		if ip, ok := origin["ip"].(string); ok {
+			if userIp, ok := origin["userIp"]; ok {
+				ip = userIp.(string)
+			} else {
+				origin["user_ip"] = ip
+			}
+
+			asn := uint(0)
+			country := "US"
+			if er.GeoIP.Country != "" {
+				db, err := geoip2.Open(er.GeoIP.Country)
+				if err != nil {
+					return err
+				}
+				defer db.Close()
+				ipAddr := net.ParseIP(ip)
+				record, err := db.Country(ipAddr)
+				if err == nil && record.Country.IsoCode != "" {
+					country = record.Country.IsoCode
+				}
+			}
+			if er.GeoIP.ASN != "" {
+				db, err := geoip2.Open(er.GeoIP.ASN)
+				if err != nil {
+					return err
+				}
+				defer db.Close()
+				ipAddr := net.ParseIP(ip)
+				record, err := db.ASN(ipAddr)
+				if err == nil && record.AutonomousSystemNumber != 0 {
+					asn = record.AutonomousSystemNumber
+				}
+			}
+			origin["asn"] = asn
+			origin["country"] = country
+		} else {
+			log.Warn().Msg("No user IP in origin, unable to determine GeoIP.")
+		}
+	} else {
+		log.Warn().Msg("No user IP in origin, unable to determine GeoIP.")
+	}
+
+	out, _, err := celProgram.ContextEval(ctx, celParams)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to evaluate Cloud Armor expression: %v", out)
 		return nil
