@@ -51,14 +51,14 @@ log "info" "Running gcpviz..."
 python3 gcpviz.py -dataset "${GCPVIZ_DATASET}" \
     -diagram-file /tmp/graph.d2 \
     -cai-table "${GCPVIZ_CAI_TABLE}" \
-    -relationships-table "${GCPVIZ_RELATIONSHIPS_TABLE}" \
+    -relationship-table "${GCPVIZ_RELATIONSHIPS_TABLE}" \
     -project "${GOOGLE_PROJECT}" \
     -location "${GOOGLE_REGION}" \
-    --query-paramters "${GCPVIZ_QUERY_PARAMETERS}" \
+    --query-parameters "${GCPVIZ_QUERY_PARAMETERS}" \
     --log-level "${GCPVIZ_LOG_LEVEL}"
 
 log "info" "Creating graph with d2..."
-/usr/local/bin/d2 -w /tmp/graph.d2 /tmp/graph.svg
+/usr/local/bin/d2 ${D2_FLAGS} -w /tmp/graph.d2 /tmp/graph.svg
 
 TSTAMP=$(date +'%Y%m%d_%H%I%S')
 TARGET_FILE="gs://${GCPVIZ_RESULT_BUCKET}/${TSTAMP}.svg"

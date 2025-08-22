@@ -203,8 +203,9 @@ additionalViews:
         name AS name,
         resource.parent AS parent 
       FROM
-        {sourceTable} 
+        {caiTable} 
       WHERE 
+        asset_type = 'cloudresourcemanager.googleapis.com/Project' AND
         resource.parent LIKE "%/folders/%";
   - asset: "cloudresourcemanager.googleapis.com/Project:cloudresourcemanager.googleapis.com/Organization"
     label: "ProjectToOrganization"
@@ -215,8 +216,9 @@ additionalViews:
         name AS name,
         resource.parent AS parent 
       FROM
-        {sourceTable}
+        {caiTable}
       WHERE
+        asset_type = 'cloudresourcemanager.googleapis.com/Project' AND
         resource.parent LIKE "%/organizations/%";
   - asset: "cloudresourcemanager.googleapis.com/Folder:cloudresourcemanager.googleapis.com/Folder"
     label: "FolderToFolder"
@@ -227,8 +229,9 @@ additionalViews:
         name AS name,
         resource.parent AS parent 
       FROM
-        {sourceTable}
+        {caiTable}
       WHERE 
+        asset_type = 'cloudresourcemanager.googleapis.com/Folder' AND
         resource.parent LIKE "%/folders/%";
   - asset: "cloudresourcemanager.googleapis.com/Folder:cloudresourcemanager.googleapis.com/Organization"
     label: "FolderToOrganization"
@@ -239,8 +242,9 @@ additionalViews:
         name AS name,
         resource.parent AS parent 
       FROM
-        {sourceTable}
+        {caiTable}
       WHERE
+        asset_type = 'cloudresourcemanager.googleapis.com/Folder' AND
         resource.parent LIKE "%/organizations/%";
   # This is the important table, as it links all the resources to projects
   - asset: "Resources:cloudresourcemanager.googleapis.com/Project"

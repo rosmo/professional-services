@@ -13,11 +13,12 @@
 # limitations under the License.
 FROM python:3.13-alpine
 
-RUN apk update && apk add curl
+RUN apk update && apk add curl bash
 
 RUN mkdir -p /opt/gcpviz
 COPY gcpviz.py requirements.txt relations.yaml config.yaml cloud_run_job.sh merge_query.py /opt/gcpviz/
 COPY google-cloud-icons /opt/gcpviz/
+RUN chmod +x /opt/gcpviz/cloud_run_job.sh
 
 WORKDIR /opt/gcpviz
 RUN pip3 install -r requirements.txt
@@ -31,6 +32,13 @@ RUN mkdir -p /tmp/d2
 RUN tar -xv --strip-components 1 -f /tmp/d2.tar.gz -C /tmp/d2
 RUN cp /tmp/d2/bin/d2 /usr/local/bin
 RUN rm -rf /tmp/d2 /tmp/d2.tar.gz
+
+# Install TALA layout engine (optional, generally paid, see: https://terrastruct.com/tala/)
+#RUN curl -L -o /tmp/d2-tala.tar.gz https://github.com/terrastruct/TALA/releases/download/v0.4.3/tala-v0.4.3-${D2_ARCH}.tar.gz
+#RUN mkdir -p /tmp/d2-tala
+#RUN tar -xv --strip-components 1 -f /tmp/d2-tala.tar.gz -C /tmp/d2-tala
+#RUN cp /tmp/d2-tala/bin/d2plugin-tala /usr/local/bin
+#RUN rm -rf /tmp/d2-tala /tmp/d2-tala.tar.gz
 
 # Install gcloud
 ENV SDK_DIR=/usr/local/lib

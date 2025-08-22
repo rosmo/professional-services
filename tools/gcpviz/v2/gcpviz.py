@@ -690,6 +690,9 @@ if __name__ == "__main__":
     parser.add_argument("-diagram-file",
                         default="graph.d2",
                         help="Result D2 diagram file")
+    parser.add_argument("-diagram-engine",
+                        default="d2",
+                        help="Which diagram engine to use (d2, mermaid (not supported yet))")
     parser.add_argument("--query-parameters", help="JSON string to parse and pass as parameters to the query")
     parser.add_argument("-cai-table", default="cai", help="Asset table")
     parser.add_argument("-relationship-table",
@@ -736,13 +739,17 @@ if __name__ == "__main__":
 
         asset_types = get_relationship_asset_types(client, project_dataset,
                                                    args.relationship_table)
-        relationship_views = generate_relationship_views(
-            client, project_dataset, args.relationship_table, asset_types)
 
+        additional_relationship_views = {}
         if "additionalViews" in config:
             additional_relationship_views = generate_additional_views(
                 client, project_dataset, args.cai_table,
                 config["additionalViews"])
+
+        relationship_views = generate_relationship_views(
+            client, project_dataset, args.relationship_table, asset_types)
+
+        if "additionalViews" in config:
             relationship_views = {
                 **relationship_views,
                 **additional_relationship_views
@@ -843,8 +850,15 @@ if __name__ == "__main__":
         nodes, connections, paths = graph_query(client, query_to_run, fields, node_settings, jinja_env)
 
         shape_template = {}
-        if "shapes" in query:
-            shape_template = query["shapes"]
+        if args.diagram_engine == "d2":
+            if "d2" in query and "shape" in query["d2"]:
+                shape_template = query["d2"]["shapes"]
+        elif args.diagram_engine == "mermaid":
+            if "mermaid" in query and "shape" in query["mermaid"]:
+                shape_template = query["mermaid"]["shapes"]
+            logging.fatal("Mermaid not yet supported.")
+        else:
+            logging.fatal(f"Unsupported diagram engine: {args.diagram_engine}")
 
         shapes = []
         total_shapes = 0
