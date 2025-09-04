@@ -86,7 +86,7 @@ query: |
       GRAPH_TABLE( 
         {{ graph }} 
         MATCH
-          (s:CloudresourcemanagerProject {name: "//cloudresourcemanager.googleapis.com/projects/1069720238363"})-[:Owns]->(d)
+          (s:CloudresourcemanagerProject)-[:Owns]->(d)
           FILTER d.asset_type {{ asset_type_filter }}
         RETURN
           s, d

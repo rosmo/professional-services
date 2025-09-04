@@ -29,6 +29,12 @@ log() {
 
 cd /opt/gcpviz
 
+export PATH=/usr/local/lib/google-cloud-sdk/bin:$PATH
+export GOOGLE_USE_DEFAULT_CREDENTIALS=true
+
+SERVICE_ACCOUNT=$(curl -H 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email)
+log "info" "Using service account: $SERVICE_ACCOUNT"
+
 if [ -z "${GCPVIZ_QUERY}" ] && [ -z "${GCPVIZ_PARTIAL_QUERY}" ] ; then
     log "error" "No query configuration specified, exiting!"
 elif [ ! -z "${GCPVIZ_QUERY}" ] ; then
@@ -59,9 +65,16 @@ python3 gcpviz.py -dataset "${GCPVIZ_DATASET}" \
     --log-level "${GCPVIZ_LOG_LEVEL}"
 
 log "info" "Creating graph with d2..."
-/usr/local/bin/d2 ${D2_FLAGS} /tmp/graph.d2 /tmp/graph.svg
+/usr/local/bin/d2 ${D2_FLAGS} --watch=false /tmp/graph.d2 /tmp/graph.svg
+
+if [ ! -f /tmp/graph.svg ] ; then
+    log "error" "The generated graph had no results: probably the query had no results. Try the query in BigQuery console (to see the query, set GCPVIZ_LOG_LEVEL=DEBUG) and troubleshoot."
+    exit 2
+fi
 
 TSTAMP=$(date +'%Y%m%d_%H%I%S')
-TARGET_FILE="gs://${GCPVIZ_RESULT_BUCKET}/${TSTAMP}.svg"
+TARGET_FILE="gs://${GCPVIZ_RESULT_BUCKET}/gcpviz-graph-${TSTAMP}.svg"
 log "info" "Copying generated graph to ${TARGET_FILE}..."
+
+export CLOUDSDK_AUTH_ACCESS_TOKEN=$(curl -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" | jq -r '.access_token')
 gcloud storage cp /tmp/graph.svg $TARGET_FILE

@@ -17,6 +17,7 @@ Make sure you have both `bigquery.googleapis.com` and `cloudasset.googleapis.com
 export ORGANIZATION_ID=1234567890
 export BILLING_PROJECT=my-billing-project
 export BQ_PROJECT=my-bq-project
+export BQ_PROJECT_NUMBER=$(gcloud projects describe $BQ_PROJECT --project $BQ_PROJECT --format='value(projectNumber)')
 export BQ_DATASET=cai
 export BQ_LOCATION=europe-west4
 export GCS_BUCKET=gcpviz-${BQ_LOCATION}-$(openssl rand -hex 3)
@@ -141,6 +142,12 @@ gcloud iam service-accounts create gcpviz-v2 \
   --display-name="Visualization tool" \
   --project=$BQ_PROJECT
 
+gcloud iam service-accounts add-iam-policy-binding \
+  gcpviz-v2@${BQ_PROJECT}.iam.gserviceaccount.com \
+  --member="serviceAccount:service-${BQ_PROJECT_NUMBER}@serverless-robot-prod.iam.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountTokenCreator" \
+  --project=$BQ_PROJECT
+
 gcloud projects add-iam-policy-binding $BQ_PROJECT \
   --member="serviceAccount:gcpviz-v2@${BQ_PROJECT}.iam.gserviceaccount.com" \
   --role="roles/bigquery.jobUser" \
@@ -149,6 +156,11 @@ gcloud projects add-iam-policy-binding $BQ_PROJECT \
 gcloud projects add-iam-policy-binding $BQ_PROJECT \
   --member="serviceAccount:gcpviz-v2@${BQ_PROJECT}.iam.gserviceaccount.com" \
   --role="roles/bigquery.dataEditor" \
+  --project=$BQ_PROJECT
+
+gcloud storage buckets add-iam-policy-binding gs://$GCS_BUCKET \
+  --member="serviceAccount:gcpviz-v2@${BQ_PROJECT}.iam.gserviceaccount.com" \
+  --role="roles/storage.objectAdmin" \
   --project=$BQ_PROJECT
 ```
 
