@@ -30,14 +30,13 @@ done
 Create the BigQuery dataset (if not already created):
 
 ```sh
-bq --project_id $BQ_PROJECT mk $BQ_DATASET
+bq --project_id $BQ_PROJECT --location $BQ_LOCATION mk $BQ_DATASET 
 ```
 
 Then, export all your assets and relationships (make sure you have the correct [IAM permissions](https://cloud.google.com/asset-inventory/docs/roles-permissions)
 on the organization level):
 
 ```sh
-
 gcloud asset export \
     --organization=$ORGANIZATION_ID \
     --content-type=resource \
@@ -173,8 +172,11 @@ gcloud run jobs execute gcpviz-v2 \
   --project $BQ_PROJECT
 ```
 
-(you can also use `GCPVIZ_PARTIAL_QUERY` to merge a query on top on an existing one stored on
-the container)
+Yyou can also:
+- Use `GCPVIZ_PARTIAL_QUERY` to merge a query on top on an existing one stored on
+the container
+- Increase log level by setting `--update-env-vars=^##^GCPVIZ_QUERY=...##GCPVIZ_LOG_LEVEL=DEBUG`
+- Or override other environment variables pre-set in the Cloud Run job
 
 ## Queries
 

@@ -182,7 +182,10 @@ def generate_additional_views(client: bigquery.Client, project_dataset: str,
 
         view_table_name = f"{project_dataset}.graph_{additional_view['table']}"
 
-        source_table = f"{project_dataset}.asset_{additional_view['sourceTable']}"
+        source_table = "*NOT SET*"
+        if "sourceTable" in additional_view:
+            source_table = f"{project_dataset}.asset_{additional_view['sourceTable']}"
+            
         view_query = additional_view["query"].replace(
             "{sourceTable}",
             source_table).replace("{caiTable}",
@@ -729,6 +732,7 @@ if __name__ == "__main__":
     if args.project:
         project_dataset = f"{args.project}.{args.dataset}"
 
+    logging.info("Fetching all asset types...")
     all_asset_types = get_all_asset_types(client, project_dataset, args.cai_table)
     if not args.skip_graph_create:
 
@@ -742,10 +746,12 @@ if __name__ == "__main__":
 
         additional_relationship_views = {}
         if "additionalViews" in config:
+            logging.info("Generating additional views...")
             additional_relationship_views = generate_additional_views(
                 client, project_dataset, args.cai_table,
                 config["additionalViews"])
 
+        logging.info("Fetching relationship views...")
         relationship_views = generate_relationship_views(
             client, project_dataset, args.relationship_table, asset_types)
 
@@ -756,6 +762,7 @@ if __name__ == "__main__":
             }
 
         if "customRelationships" in config:
+            logging.info("Creating custom views")
             custom_relationship_views = generate_custom_views(client, project_dataset, args.cai_table, all_asset_types, relationship_views, config["customRelationships"])
             relationship_views = {
                 **relationship_views,

@@ -207,6 +207,14 @@ additionalViews:
       WHERE 
         asset_type = 'cloudresourcemanager.googleapis.com/Project' AND
         resource.parent LIKE "%/folders/%";
+    assetTable: cloudresourcemanager_Project
+    assetQuery: |
+      SELECT
+        name, asset_type, resource
+      FROM
+        {caiTable}
+      WHERE
+        asset_type = 'cloudresourcemanager.googleapis.com/Project'
   - asset: "cloudresourcemanager.googleapis.com/Project:cloudresourcemanager.googleapis.com/Organization"
     label: "ProjectToOrganization"
     table: cloudresourcemanager_Project_to_cloudresourcemanager_Organization
@@ -220,6 +228,14 @@ additionalViews:
       WHERE
         asset_type = 'cloudresourcemanager.googleapis.com/Project' AND
         resource.parent LIKE "%/organizations/%";
+    assetTable: cloudresourcemanager_Organization
+    assetQuery: |
+      SELECT
+        name, asset_type, resource
+      FROM
+        {caiTable}
+      WHERE
+        asset_type = 'cloudresourcemanager.googleapis.com/Organization'
   - asset: "cloudresourcemanager.googleapis.com/Folder:cloudresourcemanager.googleapis.com/Folder"
     label: "FolderToFolder"
     table: cloudresourcemanager_Folder_to_cloudresourcemanager_Folder
@@ -237,6 +253,14 @@ additionalViews:
     label: "FolderToOrganization"
     table: cloudresourcemanager_Folder_to_cloudresourcemanager_Organization
     sourceTable: cloudresourcemanager_Folder
+    assetTable: cloudresourcemanager_Folder
+    assetQuery: |
+      SELECT
+        name, asset_type, resource
+      FROM
+        {caiTable}
+      WHERE
+        asset_type = 'cloudresourcemanager.googleapis.com/Folder'
     query: |
       SELECT 
         name AS name,
